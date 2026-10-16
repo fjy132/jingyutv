@@ -71,49 +71,73 @@ body {
   @apply bg-page text-content antialiased;
 }
 
-/* 暗色主题：胶片海报墙大图背景（多层背景直接铺在 body：遮罩 + 图，固定于视口） */
+/* ===== 胶片海报墙背景：深色 / 浅色两套主题都显示并各自适配 ===== */
+/* 浅色主题（默认）：胶片背景 + 白色遮罩，背景若隐若现，保持白底干净 */
+body {
+  background-color: #f6f7f9;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(246, 247, 249, 0.94) 0%,
+      rgba(246, 247, 249, 0.86) 18%,
+      rgba(246, 247, 249, 0.92) 42%,
+      rgba(246, 247, 249, 0.97) 70%,
+      rgba(246, 247, 249, 0.99) 100%
+    ),
+    url("/bg-film.jpg?v=3");
+  background-repeat: no-repeat;
+  background-position: center, center top;
+  background-size: 100% 100%, cover;
+  background-attachment: fixed, fixed;
+}
+/* 深色主题：胶片背景 + 深色遮罩，整体压暗、不抢眼，突出影片海报 */
 .dark body {
   background-color: #070b12;
   background-image:
     linear-gradient(
       180deg,
-      rgba(7, 11, 18, 0.85) 0%,
-      rgba(7, 11, 18, 0.30) 9%,
-      rgba(7, 11, 18, 0.26) 34%,
-      rgba(7, 11, 18, 0.70) 68%,
-      rgba(7, 11, 18, 0.94) 100%
+      rgba(7, 11, 18, 0.92) 0%,
+      rgba(7, 11, 18, 0.80) 18%,
+      rgba(7, 11, 18, 0.88) 42%,
+      rgba(7, 11, 18, 0.95) 70%,
+      rgba(7, 11, 18, 0.97) 100%
     ),
-    radial-gradient(
-      115% 82% at 50% 40%,
-      rgba(7, 11, 18, 0.66) 0%,
-      rgba(7, 11, 18, 0.20) 56%,
-      rgba(7, 11, 18, 0.06) 100%
-    ),
-    url("/bg-film.jpg?v=2");
-  background-repeat: no-repeat;
-  background-position: center, center, center top;
-  background-size: 100% 100%, 100% 100%, cover;
-  background-attachment: fixed, fixed, fixed;
+    url("/bg-film.jpg?v=3");
 }
-/* 移动端竖屏：背景按宽度铺满，仅在顶部保留一条完整胶片横带，海报区深色 */
+/* 移动端竖屏：背景按宽度铺满，仅在顶部保留一条胶片横带，下方纯色 */
 @media (max-width: 768px) {
+  body {
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(246, 247, 249, 0.88) 0%,
+        rgba(246, 247, 249, 0.80) 130px,
+        rgba(246, 247, 249, 0.93) 240px,
+        rgba(246, 247, 249, 0.99) 320px
+      ),
+      url("/bg-film.jpg?v=3");
+    background-position: center, center top;
+    background-size: 100% 100%, 100% auto;
+    background-attachment: scroll, scroll;
+  }
   .dark body {
     background-image:
       linear-gradient(
         180deg,
-        rgba(7, 11, 18, 0.70) 0%,
-        rgba(7, 11, 18, 0.50) 150px,
-        rgba(7, 11, 18, 0.84) 250px,
-        rgba(7, 11, 18, 0.97) 330px
+        rgba(7, 11, 18, 0.82) 0%,
+        rgba(7, 11, 18, 0.72) 130px,
+        rgba(7, 11, 18, 0.90) 240px,
+        rgba(7, 11, 18, 0.97) 320px
       ),
-      url("/bg-film.jpg?v=2");
+      url("/bg-film.jpg?v=3");
     background-position: center, center top;
     background-size: 100% 100%, 100% auto;
     background-attachment: scroll, scroll;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .dark body { background-attachment: scroll, scroll, scroll; }
+  body,
+  .dark body { background-attachment: scroll, scroll; }
 }
 
 body {
