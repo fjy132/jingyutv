@@ -205,7 +205,7 @@ function LiveContent() {
 
   if (!verified) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col lg:pl-60 pb-16 lg:pb-0">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <p className="text-faint text-sm">等待访问验证...</p>
@@ -218,7 +218,7 @@ function LiveContent() {
   const isFavorite = currentChannel ? liveFavorites.includes(currentChannel.url) : false;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col lg:pl-60 pb-16 lg:pb-0">
       <Header showSearch />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
