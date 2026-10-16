@@ -164,32 +164,21 @@ function HomeContent() {
   useEffect(() => setVisibleCount(RESULT_PAGE_SIZE), [groups]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col lg:pl-60 pb-16 lg:pb-0">
       <Header />
 
-      <main className="relative flex-1 max-w-6xl w-full mx-auto px-4 py-6">
-        {/* 首屏氛围渐变 */}
-        {!urlQuery && (
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-[420px] -z-10"
-            style={{
-              background:
-                'radial-gradient(60% 60% at 50% 0%, rgba(35,173,229,0.10) 0%, rgba(35,173,229,0.03) 45%, transparent 75%)',
-            }}
-          />
+      <main
+        className={cn(
+          'relative flex-1 w-full mx-auto px-4 max-w-7xl',
+          urlQuery ? 'py-6' : 'pt-4 pb-6 lg:pt-5'
         )}
-
-        {/* 搜索区 */}
-        <section className={cn('flex flex-col items-center', urlQuery ? 'mb-6' : 'mt-8 mb-8')}>
-          {!urlQuery && (
-            <header className="text-center mb-6">
-              <h1 className="text-4xl sm:text-5xl font-bold brand-gradient">鲸鱼TV</h1>
-            </header>
-          )}
-          {urlQuery && <h1 className="sr-only">鲸鱼TV 视频搜索</h1>}
-          {/* 定位容器比胶囊宽一圈：浮层按它的宽度对齐，接缝处不会与胶囊边框错位 1px */}
-          <div ref={searchHistory.containerRef} className="relative w-full max-w-2xl">
+      >
+        {/* 搜索结果页：顶部条之外再提供一个内联搜索框，便于在结果页继续检索；首页搜索由顶部条承担 */}
+        {urlQuery && (
+          <section className="mb-6">
+            <h1 className="sr-only">鲸鱼TV 视频搜索</h1>
+            {/* 定位容器比胶囊宽一圈：浮层按它的宽度对齐，接缝处不会与胶囊边框错位 1px */}
+            <div ref={searchHistory.containerRef} className="relative w-full max-w-2xl">
             <form
               className="w-full"
               onSubmit={(e) => {
@@ -278,7 +267,8 @@ function HomeContent() {
               />
             )}
           </div>
-        </section>
+          </section>
+        )}
 
         {/* 搜索结果 */}
         {urlQuery && (
