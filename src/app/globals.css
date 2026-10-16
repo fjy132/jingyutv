@@ -71,25 +71,10 @@ body {
   @apply bg-page text-content antialiased;
 }
 
-/* 暗色主题：胶片海报墙大图背景（固定层，桌面/移动端均稳定）+ 暗色遮罩保证文字可读 */
+/* 暗色主题：胶片海报墙大图背景（多层背景直接铺在 body：遮罩 + 图，固定于视口） */
 .dark body {
   background-color: #070b12;
-}
-.dark body::before,
-.dark body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-}
-.dark body::before {
-  z-index: -2;
-  background: #070b12 url("/bg-film.jpg") center top / cover no-repeat;
-}
-.dark body::after {
-  z-index: -1;
-  /* 垂直遮罩：顶部导航暗、标题/搜索区透出胶片、海报区渐暗、页脚最暗 */
-  background:
+  background-image:
     linear-gradient(
       180deg,
       rgba(7, 11, 18, 0.85) 0%,
@@ -98,32 +83,37 @@ body {
       rgba(7, 11, 18, 0.70) 68%,
       rgba(7, 11, 18, 0.94) 100%
     ),
-    /* 径向遮罩：中心内容列暗、两侧胶片海报墙显 */
     radial-gradient(
       115% 82% at 50% 40%,
       rgba(7, 11, 18, 0.66) 0%,
       rgba(7, 11, 18, 0.20) 56%,
       rgba(7, 11, 18, 0.06) 100%
-    );
-}
-@media (prefers-reduced-motion: reduce) {
-  .dark body::before { background-attachment: scroll; }
+    ),
+    url("/bg-film.jpg?v=2");
+  background-repeat: no-repeat;
+  background-position: center, center, center top;
+  background-size: 100% 100%, 100% 100%, cover;
+  background-attachment: fixed, fixed, fixed;
 }
 /* 移动端竖屏：背景按宽度铺满，仅在顶部保留一条完整胶片横带，海报区深色 */
 @media (max-width: 768px) {
-  .dark body::before {
-    background-size: 100% auto;
-    background-position: center top;
+  .dark body {
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(7, 11, 18, 0.70) 0%,
+        rgba(7, 11, 18, 0.50) 150px,
+        rgba(7, 11, 18, 0.84) 250px,
+        rgba(7, 11, 18, 0.97) 330px
+      ),
+      url("/bg-film.jpg?v=2");
+    background-position: center, center top;
+    background-size: 100% 100%, 100% auto;
+    background-attachment: scroll, scroll;
   }
-  .dark body::after {
-    background: linear-gradient(
-      180deg,
-      rgba(7, 11, 18, 0.70) 0%,
-      rgba(7, 11, 18, 0.50) 150px,
-      rgba(7, 11, 18, 0.84) 250px,
-      rgba(7, 11, 18, 0.97) 330px
-    );
-  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dark body { background-attachment: scroll, scroll, scroll; }
 }
 
 body {
