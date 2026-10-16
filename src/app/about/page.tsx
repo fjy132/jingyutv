@@ -5,7 +5,7 @@ import { SiteFooter } from '@/components/site-footer';
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col lg:pl-60 pb-16 lg:pb-0">
       <Header />
       <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-10 space-y-8">
         <section>
