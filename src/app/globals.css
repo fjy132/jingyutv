@@ -71,9 +71,33 @@ body {
   @apply bg-page text-content antialiased;
 }
 
-/* 暗色主题：模拟旧版 .page-bg 的深蓝黑纵向渐变 */
+/* 暗色主题：胶片海报墙大图背景（固定层，桌面/移动端均稳定）+ 暗色遮罩保证文字可读 */
 .dark body {
-  background: linear-gradient(180deg, rgb(11 16 26), rgb(20 28 41)) fixed;
+  background-color: #070b12;
+}
+.dark body::before,
+.dark body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+.dark body::before {
+  z-index: -2;
+  background: #070b12 url("/bg-film.jpg") center top / cover no-repeat;
+}
+.dark body::after {
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    rgba(7, 11, 18, 0.86) 0%,
+    rgba(7, 11, 18, 0.72) 26%,
+    rgba(7, 11, 18, 0.84) 60%,
+    rgba(7, 11, 18, 0.94) 100%
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  .dark body::before { background-attachment: scroll; }
 }
 
 body {
