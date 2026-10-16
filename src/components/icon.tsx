@@ -24,7 +24,15 @@ export type IconName =
   | 'link'
   | 'alert'
   | 'gear'
-  | 'home';
+  | 'home'
+  | 'film'
+  | 'tv'
+  | 'broadcast'
+  | 'mic'
+  | 'heart'
+  | 'user'
+  | 'play'
+  | 'sparkles';
 
 const PATHS: Record<IconName, ReactNode> = {
   close: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />,
@@ -139,6 +147,58 @@ const PATHS: Record<IconName, ReactNode> = {
       strokeLinejoin="round"
       strokeWidth={2}
       d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75"
+    />
+  ),
+  film: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M3.375 4.5h17.25v15H3.375v-15ZM7 4.5v15M17 4.5v15M3.375 9h3.625M3.375 12h3.625M3.375 15h3.625M17 9h3.625M17 12h3.625M17 15h3.625"
+    />
+  ),
+  tv: (
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7.5h18v11H3v-11ZM8 4l4 3.5L16 4" />
+  ),
+  broadcast: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM8.5 9a5 5 0 0 0 0 7M15.5 9a5 5 0 0 1 0 7M6 6a8.5 8.5 0 0 0 0 12M18 6a8.5 8.5 0 0 1 0 12"
+    />
+  ),
+  mic: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3ZM5 11a7 7 0 0 0 14 0M12 18v3"
+    />
+  ),
+  heart: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M12 20.5s-7.3-4.6-7.3-9.1A4.2 4.2 0 0 1 12 7.7a4.2 4.2 0 0 1 7.3 3.7c0 4.5-7.3 9.1-7.3 9.1Z"
+    />
+  ),
+  user: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 21a7.5 7.5 0 0 1 15 0"
+    />
+  ),
+  play: <path strokeLinecap="round" strokeLinejoin="round" fill="currentColor" stroke="none" d="M7 5v14l12-7L7 5Z" />,
+  sparkles: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M12 3.5 13.7 9 19 10.7 13.7 12.4 12 18l-1.7-5.6L5 10.7 10.3 9 12 3.5ZM18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"
     />
   ),
 };
