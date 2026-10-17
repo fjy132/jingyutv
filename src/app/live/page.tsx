@@ -242,7 +242,12 @@ function LiveContent() {
                         : '请先在设置中添加直播源（M3U 订阅）'
                       : playlistsQuery.isLoading
                         ? '频道列表加载中...'
-                        : '从右侧选择一个频道开始观看'}
+                        : (
+                          <>
+                            <span className="hidden lg:inline">从右侧选择一个频道开始观看</span>
+                            <span className="lg:hidden">点击右下角「频道」按钮选择频道</span>
+                          </>
+                        )}
                   </p>
                 </div>
               )}
@@ -390,7 +395,7 @@ function LiveContent() {
           {/* 移动端抽屉遮罩 */}
           {listOpen && (
             <div
-              className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+              className="fixed inset-0 z-50 bg-black/50 lg:hidden"
               aria-hidden="true"
               onClick={() => setListOpen(false)}
             />
@@ -400,7 +405,7 @@ function LiveContent() {
           <aside
             className={cn(
               'bg-surface-raised border border-line flex-col overflow-hidden',
-              'fixed inset-x-0 bottom-0 z-40 h-[75vh] rounded-t-2xl shadow-2xl',
+              'fixed inset-x-0 bottom-0 z-50 h-[75vh] rounded-t-2xl shadow-2xl',
               listOpen ? 'flex' : 'hidden',
               'lg:sticky lg:top-20 lg:flex lg:h-[calc(100vh-6.5rem)] lg:rounded-xl lg:shadow-none'
             )}
@@ -448,7 +453,7 @@ function LiveContent() {
         {/* 移动端呼出频道列表的悬浮按钮 */}
         {!listOpen && channels.length > 0 && (
           <button
-            className="fixed bottom-4 right-4 z-30 flex items-center gap-1.5 rounded-full bg-accent px-4 py-2.5 text-sm text-on-accent shadow-lg lg:hidden"
+            className="fixed bottom-20 right-4 z-50 flex items-center gap-1.5 rounded-full bg-accent px-4 py-2.5 text-sm text-on-accent shadow-lg lg:hidden"
             onClick={() => setListOpen(true)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
