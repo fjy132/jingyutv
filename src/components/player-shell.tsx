@@ -62,6 +62,8 @@ export function PlayerShell({
   const hlsRef = useRef<Hls | null>(null);
   const [error, setError] = useState('');
   const [hint, setHint] = useState('');
+  // 长时间缓冲卡住（未触发 fatal error 的假死）：弹「重新连接」横幅，不必整页刷新
+  const [stuck, setStuck] = useState(false);
   // 起播前的品牌占位图（沿用旧版 nomedia 素材），实际开始播放后隐藏
   const [showPoster, setShowPoster] = useState(true);
   const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -445,6 +447,58 @@ export function PlayerShell({
     };
     document.addEventListener('visibilitychange', saveOnHide);
 
+    // —— 卡顿看门狗：覆盖 hls.js 不抛 fatal 的「waiting 假死」（手机切后台/弱网偶发）——
+    const videoEl = art.video;
+    let watchdogTimer: ReturnType<typeof setInterval> | null = null;
+    let lastProgressAt = Date.now();
+    let lastSeenTime = -1;
+    let autoRecoverCount = 0;
+
+    const noteProgress = () => {
+      if (videoEl.currentTime !== lastSeenTime) {
+        lastSeenTime = videoEl.currentTime;
+        lastProgressAt = Date.now();
+        setStuck(false);
+        autoRecoverCount = 0;
+      }
+    };
+    const startWatchdog = () => {
+      if (watchdogTimer) return;
+      watchdogTimer = setInterval(() => {
+        // 用户主动暂停（有缓冲数据且处于暂停）不判卡
+        if (videoEl.paused && videoEl.readyState >= 3) return;
+        const stalled = Date.now() - lastProgressAt;
+        if (stalled > 15000 && autoRecoverCount < 2) {
+          autoRecoverCount += 1;
+          showHint('缓冲卡住，正在自动恢复...');
+          try { hlsRef.current?.startLoad(); hlsRef.current?.recoverMediaError(); } catch { /* noop */ }
+          lastProgressAt = Date.now();
+        } else if (stalled > 45000) {
+          setStuck(true);
+        }
+      }, 2000);
+    };
+    const clearWatchdog = () => {
+      if (watchdogTimer) { clearInterval(watchdogTimer); watchdogTimer = null; }
+      setStuck(false);
+      autoRecoverCount = 0;
+      lastProgressAt = Date.now();
+    };
+    videoEl.addEventListener('timeupdate', noteProgress);
+    videoEl.addEventListener('waiting', startWatchdog);
+    videoEl.addEventListener('playing', clearWatchdog);
+    videoEl.addEventListener('seeked', noteProgress);
+
+    // 回前台：手机切后台再回来后 MSE 可能挂起，主动续播并补缓冲
+    const resumeOnVisible = () => {
+      if (document.visibilityState === 'visible' && playbackStartedRef.current && videoEl.paused) {
+        videoEl.play().catch(() => {});
+        try { hlsRef.current?.startLoad(); } catch { /* noop */ }
+        lastProgressAt = Date.now();
+      }
+    };
+    document.addEventListener('visibilitychange', resumeOnVisible);
+
     return () => {
       // 卸载前刷一次最终进度，避免丢失最后几秒。
       // 已自然播完的集数不回写，避免覆盖 onEnded 里清除的「已看完」记录
@@ -455,6 +509,12 @@ export function PlayerShell({
       }
       document.removeEventListener('keydown', shortcuts);
       document.removeEventListener('visibilitychange', saveOnHide);
+      document.removeEventListener('visibilitychange', resumeOnVisible);
+      videoEl.removeEventListener('timeupdate', noteProgress);
+      videoEl.removeEventListener('waiting', startWatchdog);
+      videoEl.removeEventListener('playing', clearWatchdog);
+      videoEl.removeEventListener('seeked', noteProgress);
+      if (watchdogTimer) clearInterval(watchdogTimer);
       if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
       el?.removeEventListener('touchstart', onTouchStart);
       el?.removeEventListener('touchend', onTouchEnd);
@@ -506,10 +566,38 @@ export function PlayerShell({
         />
       )}
       {error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/80">
-          <p className="text-danger text-sm">{error}</p>
-          <button className="btn-ghost text-xs" onClick={() => location.reload()}>
-            重新加载
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80">
+          <p className="text-danger text-sm px-6 text-center">{error}</p>
+          <div className="flex gap-2">
+            <button
+              className="btn-ghost text-xs"
+              onClick={() => {
+                setError('');
+                setStuck(false);
+                try {
+                  if (artRef.current) setupHls(artRef.current.video, currentMediaUrlRef.current, true);
+                } catch { /* noop */ }
+              }}
+            >
+              重新连接
+            </button>
+            <button className="btn-ghost text-xs" onClick={() => location.reload()}>
+              刷新页面
+            </button>
+          </div>
+        </div>
+      )}
+      {stuck && !error && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 rounded-full bg-amber-600/90 px-3 py-1.5 text-xs text-white shadow-lg">
+          <span>播放卡住了</span>
+          <button
+            className="underline underline-offset-2"
+            onClick={() => {
+              setStuck(false);
+              try { hlsRef.current?.startLoad(); } catch { /* noop */ }
+            }}
+          >
+            重新连接
           </button>
         </div>
       )}
