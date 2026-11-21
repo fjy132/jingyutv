@@ -1,0 +1,41 @@
+name: health-ping
+
+# 定时健康拨测 / 保活：低频访问首页与状态接口，降低 Vercel Hobby 函数闲置冷启动概率，
+# 同时作为可用性监控——连续失败会在 Actions 运行记录里标红。
+#
+# 说明：
+# - 仓库为公开仓库时 GitHub Actions 免费；schedule 触发可能有数分钟延迟，属正常现象。
+# - 仅做 GET 探测，不携带登录 Cookie；/api/status 未登录也返回 200 状态 JSON。
+# - 需要失败主动提醒：在仓库 Settings → Notifications 开启 Actions 失败邮件，
+#   或接入 UptimeRobot / 阿里云云监控等外部拨测告警。
+
+on:
+  schedule:
+    # 每 20 分钟一次（UTC；GitHub cron 为 UTC 时间）。
+    # 频率兼顾保活与公开仓库 Actions 免费额度（2000 分钟/月），过密会耗尽额度。
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BASE_URL: https://jingyu.xyz
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe home page
+        run: |
+          code=$(curl -sS -L --max-time 15 -A "health-ping/1.0" -o /tmp/home.html -w '%{http_code}' "$BASE_URL/")
+          echo "home HTTP $code"
+          test "$code" = "200"
+
+      - name: Probe status API
+        run: |
+          code=$(curl -sS -L --max-time 15 -A "health-ping/1.0" -o /tmp/status.json -w '%{http_code}' "$BASE_URL/api/status")
+          echo "status HTTP $code"
+          test "$code" = "200"
+          grep -q "passwordRequired" /tmp/status.json

@@ -44,15 +44,60 @@ export function onUnauthorized(handler: (event: CustomEvent) => void): () => voi
   return () => window.removeEventListener(UNAUTHORIZED_EVENT, wrapped);
 }
 
-/** 401/503 统一处理：分发全局事件打开登录框并抛 ApiError（普通与流式请求共用） */
-function throwForAuthStatus(res: Response): void {
+/** 可重试的网关/临时不可用状态码：冷启动、网关超时、上游瞬时故障 */
+const RETRYABLE_STATUS = new Set([502, 503, 504]);
+/** GET 幂等请求失败后的退避时长 */
+const RETRY_DELAY_MS = 600;
+
+function sleep(ms: number, signal?: AbortSignal | null): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, ms);
+    signal?.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer);
+        reject(new DOMException('Aborted', 'AbortError'));
+      },
+      { once: true }
+    );
+  });
+}
+
+/**
+ * 503 是否为「服务端未配置密码」。
+ * 仅当响应体 JSON 的 error 明确指向未设置 PASSWORD 时才按 setup 处理；
+ * 冷启动/网关超时返回的 Envoy 纯文本 503 不属于此情形，避免误弹「配置密码」框。
+ */
+async function isPasswordSetupMissing(res: Response): Promise<boolean> {
+  try {
+    const text = await res.clone().text();
+    if (!text) return false;
+    let err = text;
+    try {
+      err = (JSON.parse(text) as { error?: string }).error ?? text;
+    } catch {
+      // 非 JSON（Envoy 超时纯文本）：保持原文判断
+    }
+    return /密码|PASSWORD|password/i.test(err);
+  } catch {
+    return false;
+  }
+}
+
+/** 401/503 统一处理：401 弹登录框；503 区分「未配置密码」与「服务暂时不可用」（普通与流式请求共用） */
+async function handleAuthStatus(res: Response): Promise<void> {
   if (res.status === 401) {
     window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT));
     throw new ApiError('需要登录', 401);
   }
   if (res.status === 503) {
-    window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT, { detail: 'setup' }));
-    throw new ApiError('服务器未配置密码', 503);
+    const setup = await isPasswordSetupMissing(res);
+    if (setup) {
+      window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT, { detail: 'setup' }));
+      throw new ApiError('服务器未配置密码', 503);
+    }
+    // 网关/冷启动导致的临时不可用：不弹登录框，交回上层按可重试错误处理
+    throw new ApiError('服务暂时不可用，请稍后重试', 503);
   }
 }
 
@@ -86,23 +131,42 @@ async function consumeNdjson<T>(res: Response, onEvent: (event: T) => void): Pro
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(url, init);
-  } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') throw err;
-    throw new ApiError('网络请求失败，请检查网络连接', 0);
-  }
-  throwForAuthStatus(res);
-  if (!res.ok) {
-    let msg = `请求失败 (${res.status})`;
+  const method = (init?.method || 'GET').toUpperCase();
+  // 仅 GET 幂等请求允许失败重试；POST/DELETE 与流式写操作不重试
+  const retryable = method === 'GET';
+  const signal = init?.signal;
+  let attempt = 0;
+
+  for (;;) {
+    let res: Response;
     try {
-      const data = (await res.json()) as { error?: string };
-      if (data?.error) msg = data.error;
-    } catch { /* 忽略解析失败 */ }
-    throw new ApiError(msg, res.status);
+      res = await fetch(url, init);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') throw err;
+      if (retryable && attempt < 1) {
+        await sleep(RETRY_DELAY_MS, signal);
+        attempt++;
+        continue;
+      }
+      throw new ApiError('网络请求失败，请检查网络连接', 0);
+    }
+
+    await handleAuthStatus(res);
+    if (!res.ok) {
+      if (retryable && attempt < 1 && RETRYABLE_STATUS.has(res.status)) {
+        await sleep(RETRY_DELAY_MS, signal);
+        attempt++;
+        continue;
+      }
+      let msg = `请求失败 (${res.status})`;
+      try {
+        const data = (await res.json()) as { error?: string };
+        if (data?.error) msg = data.error;
+      } catch { /* 忽略解析失败 */ }
+      throw new ApiError(msg, res.status);
+    }
+    return (await res.json()) as T;
   }
-  return (await res.json()) as T;
 }
 
 export const api = {
@@ -266,7 +330,7 @@ export const api = {
       body: JSON.stringify({ urls }),
       signal,
     });
-    throwForAuthStatus(res);
+    await handleAuthStatus(res);
     if (!res.ok || !res.body) throw new ApiError(`请求失败 (${res.status})`, res.status);
 
     await consumeNdjson<LiveProbeResult>(res, onResult);
@@ -293,7 +357,7 @@ async function searchStream(
     body: JSON.stringify({ wd, sources, filterAdult }),
     signal,
   });
-    throwForAuthStatus(res);
+    await handleAuthStatus(res);
     if (!res.ok || !res.body) throw new ApiError(`请求失败 (${res.status})`, res.status);
 
     // done 事件缺失（流被截断）时退化为空结果，不让整次搜索报错
